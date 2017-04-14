@@ -21,7 +21,10 @@ public class WorldGamePanel extends JPanel implements Runnable{
 	Thread t;
 	Timer worldTick;
 	ArrayList<Character> characters = new ArrayList<Character>();
+	int lives = 5;
+	GoldenKnight player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
 	BufferedImage castle;
+	Castle base = new Castle(100);
 	boolean isRunning;
 	public static void main(String[] args){
 		new WorldGamePanel();
@@ -41,7 +44,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 	}
 	public void setUpPanel(){
-		characters.add(new GoldenKnight(900,420));
+		characters.add(player);
 		JFrame frame = new JFrame("Slashin Nash");
 		frame.add(this);
 		this.setLayout(null);
@@ -55,7 +58,6 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				// TODO Auto-generated method stub
-				System.out.println("X : " + e.getX() + " Y : " + e.getY());
 			}
 
 			@Override
@@ -104,8 +106,8 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
-				characters.get(0).changeXVelocity(-characters.get(0).getSpeed());
-				characters.get(0).changeDirection(Direction.LEFT);
+				player.changeXVelocity(-player.getSpeed());
+				player.changeDirection(Direction.LEFT);
 			}
 
 		});
@@ -113,8 +115,8 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeXVelocity(characters.get(0).getSpeed());
-				characters.get(0).changeDirection(Direction.RIGHT);
+				player.changeXVelocity(player.getSpeed());
+				player.changeDirection(Direction.RIGHT);
 			}
 
 		});
@@ -122,8 +124,8 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeYVelocity(-characters.get(0).getSpeed());
-				characters.get(0).changeDirection(Direction.UP);
+				player.changeYVelocity(-player.getSpeed());
+				player.changeDirection(Direction.UP);
 			}
 
 		});
@@ -131,8 +133,8 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeYVelocity(characters.get(0).getSpeed());
-				characters.get(0).changeDirection(Direction.DOWN);
+				player.changeYVelocity(player.getSpeed());
+				player.changeDirection(Direction.DOWN);
 			}
 
 		});
@@ -140,7 +142,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeXVelocity(0);
+				player.changeXVelocity(0);
 
 			}
 
@@ -149,7 +151,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeXVelocity(0);
+				player.changeXVelocity(0);
 			}
 
 		});
@@ -157,7 +159,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeYVelocity(0);
+				player.changeYVelocity(0);
 			}
 
 		});
@@ -165,7 +167,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).changeYVelocity(0);
+				player.changeYVelocity(0);
 
 			}
 
@@ -175,7 +177,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				characters.get(0).attack();
+				player.attack();
 			}
 
 		});
@@ -192,11 +194,10 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		});
 		worldTick = new Timer(2000,e->{
 			spawnInMonster();
+			checkForPlayerDeath();
 		});
-		worldTick.start();
-		
-		
-	}
+		worldTick.start();	
+		}
 	public void spawnInMonster(){
 		characters.add(new Ogre(0,(int)(Math.random()*300)+300,Direction.RIGHT));
 	}
@@ -228,7 +229,14 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		checkForWounds();
 		repaint();
 	}
-
+	
+	public void checkForPlayerDeath(){
+		if(characters.indexOf(player)==-1){
+			player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
+			characters.add(player);
+			lives--;
+		}
+	}
 	public void checkForWounds(){
 		for(int index = 0; index < characters.size(); index++){
 			Character c = characters.get(index);
@@ -303,7 +311,6 @@ public class WorldGamePanel extends JPanel implements Runnable{
 						}
 					}
 					break;
-					
 				}
 			}
 		}
@@ -317,20 +324,23 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			if(c.getX()<=0){
 				c.changeX(c.getSpeed());
 			}
-			if(c.getY()<=230){ //trees and grass
+			if(c.getY()<=Toolkit.getDefaultToolkit().getScreenSize().height/3){ //trees and grass
 				c.changeY(c.getSpeed());
 			}
-			if(c.getY()>=Toolkit.getDefaultToolkit().getScreenSize().height-120){ //120 pixel buffer
+			if(c.getY()>=Toolkit.getDefaultToolkit().getScreenSize().height){ //120 pixel buffer
 				c.changeY(-c.getSpeed());
 			}
-			if(c.getX()>950&&c.getY()>420){
-				c.changeY(-c.getSpeed());
-			}
-			if(c.getX()>950&&c.getY()<380){
+			if(c.getX()>(int) (Toolkit.getDefaultToolkit().getScreenSize().width*.7)&&c.getY()<(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5)){
 				c.changeY(c.getSpeed());
+			}
+			if(c.getX()>(int) (Toolkit.getDefaultToolkit().getScreenSize().width*.7)&&c.getY()>(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.6)){
+				c.changeY(-c.getSpeed());
 			}
 			if(c.getX()>1000){
+				if(index!=0){
 				characters.remove(c);
+				base.fatalDamage(c.getPower());
+				}
 			}
 			c.changeX(c.getXVelocity());
 			c.changeY(c.getYVelocity());
@@ -341,9 +351,21 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		super.paintComponent(g);
 		drawBackDrop(g);
 		drawCharacters(g);
+		drawBase(g);
+		drawLives(g);
+	}
+	public void drawLives(Graphics g){
+		int xBuffer = Toolkit.getDefaultToolkit().getScreenSize().width/2-100; //100 pixel buffer
+		for(int index = 0; index < lives; index++){
+			g.fillRect(xBuffer, 30, 70, 70);
+			xBuffer+=80;
+		}
 	}
 	public void drawBackDrop(Graphics g){
 		g.drawImage(castle, 0, 0,Toolkit.getDefaultToolkit().getScreenSize().width, Toolkit.getDefaultToolkit().getScreenSize().height,null);
+	}
+	public void drawBase(Graphics g){
+		base.draw(g);
 	}
 	public void drawCharacters(Graphics g){
 		for(int index = 0; index < characters.size(); index++){

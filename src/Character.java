@@ -11,8 +11,11 @@ import javax.swing.Timer;
 public abstract class Character {
 	private Timer movement;
 	private Timer grace;
-	private boolean canTakeDamage = true;
+	private Timer moveAI;
+	private boolean tookDamage = true;
 	private boolean attacking = false;
+	private boolean aiEnabled = false;
+	private boolean retreating = false;
 	private Direction d = Direction.LEFT;
 	private int x;
 	private int y;
@@ -24,6 +27,7 @@ public abstract class Character {
 	private int movePhase = 0;
 	private int attackPhase = 0;
 	private int health;
+	private int initialHealth;
 	private int power;
 	public BufferedImage spriteSheet;
 	public String bufferedImagePath;
@@ -40,6 +44,7 @@ public abstract class Character {
 		this.x = x;
 		this.y = y;
 		this.health = health;
+		initialHealth = health;
 		this.power = power;
 		this.width = width;
 		this.height = height;
@@ -49,13 +54,20 @@ public abstract class Character {
 		
 		
 		grace = new Timer(200,e ->{
-			if(!canTakeDamage){
-				canTakeDamage = true;
+			if(!tookDamage){
+				 tookDamage = true;
 			}
 		});
 			
 		grace.start();
 		
+		moveAI = new Timer(4000, e->{
+			if(retreating){
+				retreating = false;
+			}
+		});
+		
+		moveAI.start();
 		
 		movement = new Timer(65,e->{
 			if(xVelocity!=0||yVelocity!=0)
@@ -63,8 +75,40 @@ public abstract class Character {
 			if(attacking){
 				incrementAttackPhase();
 			}
+			if(aiEnabled){
+				thinkProcess();
+			}
 		});
 		movement.start();
+		
+	}
+	public void thinkProcess(){
+		if(!tookDamage){
+			attack();
+			switch(d){
+			case RIGHT:
+			changeDirection(Direction.LEFT);
+			changeXVelocity(-speed);
+			break;
+			case LEFT:
+				changeDirection(Direction.RIGHT);
+				changeXVelocity(speed);
+				break;
+			case UP:
+				changeDirection(Direction.DOWN);
+				changeYVelocity(-speed);
+				break;
+			case DOWN:
+				changeDirection(Direction.UP);
+				changeYVelocity(speed);
+				break;
+			}
+			
+		}
+		if(!retreating){
+		changeDirection(Direction.RIGHT);
+		changeXVelocity(speed);
+		}
 		
 	}
 	public int getPower(){
@@ -73,12 +117,16 @@ public abstract class Character {
 	public int getHealth(){
 		return health;
 	}
+	public void toggleAI(){
+		aiEnabled = !aiEnabled;
+	}
 	public boolean fatalDamage(int inc){
-		if(canTakeDamage){
+		if(tookDamage){
 		if((health-=inc)<0){
 			return true;
 		}
-		canTakeDamage = false;
+		tookDamage = false;
+		retreating = true;
 		return false;
 		}
 		return false;
@@ -172,7 +220,6 @@ public abstract class Character {
 		attacking = true;
 	}
 	public void incrementMovePhase(){
-		System.out.println(getX() + " " + getY());
 		movePhase++;
 		if(movePhase>=9)
 			movePhase = 0;
@@ -183,6 +230,9 @@ public abstract class Character {
 			attackPhase = 0;
 			attacking = false;
 		}
+	}
+	public void heal(){
+		health = initialHealth;
 	}
 	public int getX(){
 		return x;
