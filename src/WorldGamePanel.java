@@ -2,6 +2,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
@@ -13,9 +15,11 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+import javax.swing.Timer;
 @SuppressWarnings("serial")
 public class WorldGamePanel extends JPanel implements Runnable{
 	Thread t;
+	Timer worldTick;
 	ArrayList<Character> characters = new ArrayList<Character>();
 	BufferedImage castle;
 	boolean isRunning;
@@ -37,7 +41,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 	}
 	public void setUpPanel(){
-		characters.add(new GoldenKnight(910,420));
+		characters.add(new GoldenKnight(900,420));
 		JFrame frame = new JFrame("Slashin Nash");
 		frame.add(this);
 		this.setLayout(null);
@@ -46,6 +50,39 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
 		frame.setResizable(false);
+		frame.addMouseListener(new MouseListener(){
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// TODO Auto-generated method stub
+				System.out.println("X : " + e.getX() + " Y : " + e.getY());
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("A"), "A");
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("S"), "S");
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("D"), "D");
@@ -142,7 +179,26 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			}
 
 		});
+		this.getActionMap().put("pause", new AbstractAction(){
 
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(isRunning){
+					stop();
+				}else
+					start();
+			}
+
+		});
+		worldTick = new Timer(2000,e->{
+			spawnInMonster();
+		});
+		worldTick.start();
+		
+		
+	}
+	public void spawnInMonster(){
+		characters.add(new Ogre(0,(int)(Math.random()*300)+300,Direction.RIGHT));
 	}
 	public synchronized void start(){
 		t = new Thread(this);
@@ -169,14 +225,95 @@ public class WorldGamePanel extends JPanel implements Runnable{
 	}
 	public void updatePanel(){
 		updateCharacterLocations();
+		checkForWounds();
 		repaint();
+	}
+
+	public void checkForWounds(){
+		for(int index = 0; index < characters.size(); index++){
+			Character c = characters.get(index);
+			int swordPointX, swordPointY;
+			if(c.isAttacking()){
+				switch(c.getDirection()){
+				case UP: 
+					swordPointX = c.getX()+(c.getWidth()/2);
+					swordPointY = c.getY();
+					for(int index2 = 0; index2 < characters.size(); index2++){
+						if(!c.equals(characters.get(index2))){
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+								if(characters.get(index2).fatalDamage(c.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+						}
+					}
+					break;
+				case DOWN: 
+					swordPointX = c.getX()+(c.getWidth()/2);
+					swordPointY = c.getY()+c.getHeight();
+					for(int index2 = 0; index2 < characters.size(); index2++){
+						if(!c.equals(characters.get(index2))){
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+								if(characters.get(index2).fatalDamage(c.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+						}
+					}
+					break;	
+				case LEFT:
+					swordPointX = c.getX();
+					swordPointY = c.getY()+c.getHeight()/2;
+					for(int index2 = 0; index2 < characters.size(); index2++){
+						if(!c.equals(characters.get(index2))){
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + c.getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + c.getHeight();
+							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+								if(characters.get(index2).fatalDamage(c.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+						}
+					}
+					break;
+				case RIGHT:
+					swordPointX = c.getX()+c.getWidth();
+					swordPointY = c.getY()+c.getHeight()/2;
+					for(int index2 = 0; index2 < characters.size(); index2++){
+						if(!c.equals(characters.get(index2))){
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + c.getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + c.getHeight();
+							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+								if(characters.get(index2).fatalDamage(c.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+						}
+					}
+					break;
+					
+				}
+			}
+		}
 	}
 	public void updateCharacterLocations(){
 		for(int index = 0; index < characters.size(); index++){
 			
 			Character c = characters.get(index);
 			if(c.isAttacking())
-				continue;
+				continue;				//no moving while attacking
 			if(c.getX()<=0){
 				c.changeX(c.getSpeed());
 			}
@@ -186,14 +323,14 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			if(c.getY()>=Toolkit.getDefaultToolkit().getScreenSize().height-120){ //120 pixel buffer
 				c.changeY(-c.getSpeed());
 			}
-			if(c.getX()>950&&c.getY()>430){
+			if(c.getX()>950&&c.getY()>420){
 				c.changeY(-c.getSpeed());
 			}
 			if(c.getX()>950&&c.getY()<380){
 				c.changeY(c.getSpeed());
 			}
-			if(c.getX()>1115){
-				System.out.println("in castle!");
+			if(c.getX()>1000){
+				characters.remove(c);
 			}
 			c.changeX(c.getXVelocity());
 			c.changeY(c.getYVelocity());

@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -9,8 +10,10 @@ import javax.swing.Timer;
 
 public abstract class Character {
 	private Timer movement;
+	private Timer grace;
+	private boolean canTakeDamage = true;
 	private boolean attacking = false;
-	private Direction d = Direction.RIGHT;
+	private Direction d = Direction.LEFT;
 	private int x;
 	private int y;
 	private int width;
@@ -20,6 +23,8 @@ public abstract class Character {
 	private int speed;
 	private int movePhase = 0;
 	private int attackPhase = 0;
+	private int health;
+	private int power;
 	public BufferedImage spriteSheet;
 	public String bufferedImagePath;
 	public BufferedImage[] walkRight = new BufferedImage[9];
@@ -31,14 +36,26 @@ public abstract class Character {
 	public BufferedImage[] attackLeft = new BufferedImage[6];
 	public BufferedImage[] attackRight = new BufferedImage[6];
 
-	public Character(String imagePath,int x , int y, int width, int height,int speed){
+	public Character(String imagePath,int x , int y, int width, int height,int speed,int health,int power){
 		this.x = x;
 		this.y = y;
+		this.health = health;
+		this.power = power;
 		this.width = width;
 		this.height = height;
 		this.speed = speed;
 		bufferedImagePath = imagePath;
 		splitSpriteSheet();
+		
+		
+		grace = new Timer(200,e ->{
+			if(!canTakeDamage){
+				canTakeDamage = true;
+			}
+		});
+			
+		grace.start();
+		
 		
 		movement = new Timer(65,e->{
 			if(xVelocity!=0||yVelocity!=0)
@@ -49,6 +66,22 @@ public abstract class Character {
 		});
 		movement.start();
 		
+	}
+	public int getPower(){
+		return power;
+	}
+	public int getHealth(){
+		return health;
+	}
+	public boolean fatalDamage(int inc){
+		if(canTakeDamage){
+		if((health-=inc)<0){
+			return true;
+		}
+		canTakeDamage = false;
+		return false;
+		}
+		return false;
 	}
 	public void splitSpriteSheet(){
 		URL imageUrl = getClass().getResource(bufferedImagePath);
@@ -118,6 +151,8 @@ public abstract class Character {
 		case DOWN : g.drawImage(walkDown[movePhase], x, y,100,100, null);
 		break;
 		}
+		g.setColor(Color.green);
+		g.fillRect(x, y, health, 8);
 	}
 	public void drawAttack(Graphics g, int x , int y){
 		switch(d){  
@@ -130,6 +165,8 @@ public abstract class Character {
 		case DOWN : g.drawImage(attackDown[attackPhase], x-20, y-10,160,160, null);
 		break;
 		}
+		g.setColor(Color.green);
+		g.fillRect(x, y+5, health, 8); // 5 pixel buffer
 	}
 	public void attack(){
 		attacking = true;
@@ -141,7 +178,6 @@ public abstract class Character {
 			movePhase = 0;
 	}
 	public void incrementAttackPhase(){
-		System.out.println(getX() + " " + getY());
 		attackPhase++;
 		if(attackPhase>=6){
 			attackPhase = 0;
