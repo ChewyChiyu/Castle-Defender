@@ -37,7 +37,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 	}
 	public void setUpPanel(){
-		characters.add(new GoldenKnight(700,600));
+		characters.add(new GoldenKnight(910,420));
 		JFrame frame = new JFrame("Slashin Nash");
 		frame.add(this);
 		this.setLayout(null);
@@ -60,12 +60,13 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released SPACE"), "rSPACE");
 
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("P"), "pause");
+		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "SPACE");
 
 		this.getActionMap().put("A", new AbstractAction(){
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
+
 				characters.get(0).changeXVelocity(-characters.get(0).getSpeed());
 				characters.get(0).changeDirection(Direction.LEFT);
 			}
@@ -133,8 +134,15 @@ public class WorldGamePanel extends JPanel implements Runnable{
 
 		});
 
-		
-		
+		this.getActionMap().put("SPACE", new AbstractAction(){
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				characters.get(0).attack();
+			}
+
+		});
+
 	}
 	public synchronized void start(){
 		t = new Thread(this);
@@ -165,29 +173,32 @@ public class WorldGamePanel extends JPanel implements Runnable{
 	}
 	public void updateCharacterLocations(){
 		for(int index = 0; index < characters.size(); index++){
+			
 			Character c = characters.get(index);
-		if(c.getX()<=0){
-			c.changeX(c.getSpeed());
+			if(c.isAttacking())
+				continue;
+			if(c.getX()<=0){
+				c.changeX(c.getSpeed());
+			}
+			if(c.getY()<=230){ //trees and grass
+				c.changeY(c.getSpeed());
+			}
+			if(c.getY()>=Toolkit.getDefaultToolkit().getScreenSize().height-120){ //120 pixel buffer
+				c.changeY(-c.getSpeed());
+			}
+			if(c.getX()>950&&c.getY()>430){
+				c.changeY(-c.getSpeed());
+			}
+			if(c.getX()>950&&c.getY()<380){
+				c.changeY(c.getSpeed());
+			}
+			if(c.getX()>1115){
+				System.out.println("in castle!");
+			}
+			c.changeX(c.getXVelocity());
+			c.changeY(c.getYVelocity());
 		}
-		if(c.getY()<=230){ //trees and grass
-			c.changeY(c.getSpeed());
-		}
-		if(c.getY()>=Toolkit.getDefaultToolkit().getScreenSize().height-120){ //120 pixel buffer
-			c.changeY(-c.getSpeed());
-		}
-		if(c.getX()>950&&c.getY()>430){
-			c.changeY(-c.getSpeed());
-		}
-		if(c.getX()>950&&c.getY()<380){
-			c.changeY(c.getSpeed());
-		}
-		if(c.getX()>1115){
-			System.out.println("in castle!");
-		}
-		c.changeX(c.getXVelocity());
-		c.changeY(c.getYVelocity());
-		}
-		
+
 	}
 	public void paintComponent(Graphics g){
 		super.paintComponent(g);
@@ -198,8 +209,14 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		g.drawImage(castle, 0, 0,Toolkit.getDefaultToolkit().getScreenSize().width, Toolkit.getDefaultToolkit().getScreenSize().height,null);
 	}
 	public void drawCharacters(Graphics g){
-		for(int index = 0; index < characters.size(); index++)
-		characters.get(index).draw(g, characters.get(index).getX(), characters.get(index).getY());
+		for(int index = 0; index < characters.size(); index++){
+			if(characters.get(index).isAttacking()){
+				characters.get(index).drawAttack(g, characters.get(index).getX(), characters.get(index).getY());
+				continue;
+			}
+			characters.get(index).drawMove(g, characters.get(index).getX(), characters.get(index).getY());
+			
+		}
 	}
-	
+
 }
