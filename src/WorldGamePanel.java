@@ -54,7 +54,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 	public void setUpPanel(){
 		characters.add(player);
@@ -75,27 +75,27 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			@Override
 			public void mousePressed(MouseEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
 
 			@Override
 			public void mouseEntered(MouseEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
 
 			@Override
 			public void mouseExited(MouseEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 		});
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("A"), "A");
 		this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("S"), "S");
@@ -213,10 +213,10 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			gameTime++;
 		});
 		time.start();
-		}
+	}
 	public void spawnInMonster(){
 		if((int)(Math.random()*2)==0){
-		characters.add(new Ogre(0,(int)(Math.random()*300)+(Toolkit.getDefaultToolkit().getScreenSize().height/3)));
+			characters.add(new Ogre(0,(int)(Math.random()*300)+(Toolkit.getDefaultToolkit().getScreenSize().height/3)));
 		}else{
 			characters.add(new Skelly(0,(int)(Math.random()*300)+(Toolkit.getDefaultToolkit().getScreenSize().height/3)));
 		}
@@ -253,7 +253,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		checkForWounds();
 		repaint();
 	}
-	
+
 	public void checkForPlayerDeath(){
 		if(characters.indexOf(player)==-1){
 			player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
@@ -261,64 +261,153 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			lives--;
 		}
 		if(lives<=0||base.fatalDamage(0)){
-		time.stop();
-		worldTick.stop();
-		int reply = JOptionPane.showConfirmDialog(null, "You Defended for " + gameTime + "seconds" + "\n Play Again?" , "Lose", JOptionPane.YES_NO_OPTION);
-		if (reply == JOptionPane.YES_OPTION) {
-			lives = 5;
-			characters.clear();
-			player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
-			characters.add(player);
-			base.heal();
-			gameTime = 0;
-			time.start();
-			worldTick.start();
-		}
-		else {
-			System.exit(0);
-		}
+			time.stop();
+			worldTick.stop();
+			int reply = JOptionPane.showConfirmDialog(null, "You Defended for " + gameTime + " seconds " + "\n Play Again?" , "Lose", JOptionPane.YES_NO_OPTION);
+			if (reply == JOptionPane.YES_OPTION) {
+				lives = 5;
+				characters.clear();
+				player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
+				characters.add(player);
+				base.heal();
+				gameTime = 0;
+				time.start();
+				worldTick.start();
+			}
+			else {
+				System.exit(0);
+			}
 		}
 	}
 	public void checkForWounds(){
+		int playerX;
+		int playerY;
+		if(player.isAttacking()){
+			switch(player.getDirection()){
+			case UP:
+				playerX = player.getX()+(player.getWidth()/2);
+				playerY = player.getY();
+				for(int index2 = 0; index2 < characters.size(); index2++){
+							if(characters.get(index2).equals(player))
+								continue;
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyX1<=playerX&&bodyX2>=playerX&&bodyY1<=playerY&&bodyY2>=playerY){
+								if(characters.get(index2).fatalDamage(player.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+				}
+				break;
+			
+			case DOWN:
+				playerX = player.getX()+(player.getWidth()/2);
+				playerY = player.getY()+player.getHeight();
+				for(int index2 = 0; index2 < characters.size(); index2++){
+					if(characters.get(index2).equals(player))
+						continue;
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyX1<=playerX&&bodyX2>=playerX&&bodyY1<=playerY&&bodyY2>=playerY){
+								if(characters.get(index2).fatalDamage(player.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+				}
+				break;
+			
+			case LEFT:
+				playerX = player.getX();
+				playerY = player.getY()+player.getHeight()/2;
+				for(int index2 = 0; index2 < characters.size(); index2++){
+					if(characters.get(index2).equals(player))
+						continue;
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyX1<=playerX&&bodyX2>=playerX&&bodyY1<=playerY&&bodyY2>=playerY){
+								if(characters.get(index2).fatalDamage(player.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+				}
+				break;
+				
+			case RIGHT:
+				playerX = player.getX()+player.getWidth();
+				playerY = player.getY()+player.getHeight()/2;
+				for(int index2 = 0; index2 < characters.size(); index2++){
+					if(characters.get(index2).equals(player))
+						continue; 
+							int bodyX1 = characters.get(index2).getX();
+							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyX1<=playerX&&bodyX2>=playerX&&bodyY1<=playerY&&bodyY2>=playerY){
+								if(characters.get(index2).fatalDamage(player.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+				}
+				break;
+			
+			
+			}
+		}
+		
+		
+		
+		
+		
 		for(int index = 0; index < characters.size(); index++){
 			Character c = characters.get(index);
 			int swordPointX, swordPointY;
 			if(c.isAttacking()){
-				
 				if(c.getType().equals(CharacterTypes.SKELLY)){
 					swordPointY = c.getY() + c.getHeight()/2;
 					swordPointX = c.getX();
 					for(int index2 = 0; index2 < characters.size(); index2++){
 						if(!c.equals(characters.get(index2))){
-							int bodyX = characters.get(index2).getX();
-							int bodyY1 = characters.get(index2).getY();
-							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
-							if(bodyY1<=swordPointY&&bodyY2>=swordPointY&&bodyX>swordPointX){
-								if(characters.get(index2).fatalDamage(c.getPower())){
-									characters.remove(characters.get(index2));
+							if(characters.get(index2).getType().equals(CharacterTypes.GOLDEN_KNIGHT)&&!c.getType().equals(CharacterTypes.GOLDEN_KNIGHT)){
+								int bodyX = characters.get(index2).getX();
+								int bodyY1 = characters.get(index2).getY();
+								int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+								if(bodyY1<=swordPointY&&bodyY2>=swordPointY&&bodyX>swordPointX){
+									if(characters.get(index2).fatalDamage(c.getPower())){
+										characters.remove(characters.get(index2));
+									}
 								}
 							}
+
 						}
 					}
 				}
-				
-				
-				
+
+
+
 				switch(c.getDirection()){
 				case UP: 
 					swordPointX = c.getX()+(c.getWidth()/2);
 					swordPointY = c.getY();
 					for(int index2 = 0; index2 < characters.size(); index2++){
 						if(!c.equals(characters.get(index2))){
-							int bodyX1 = characters.get(index2).getX();
-							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
-							int bodyY1 = characters.get(index2).getY();
-							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
-							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
-								if(characters.get(index2).fatalDamage(c.getPower())){
-									characters.remove(characters.get(index2));
+							if(characters.get(index2).getType().equals(CharacterTypes.GOLDEN_KNIGHT)&&!c.getType().equals(CharacterTypes.GOLDEN_KNIGHT)){
+								int bodyX1 = characters.get(index2).getX();
+								int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+								int bodyY1 = characters.get(index2).getY();
+								int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+								if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+									if(characters.get(index2).fatalDamage(c.getPower())){
+										characters.remove(characters.get(index2));
+									}
 								}
 							}
+
 						}
 					}
 					break;
@@ -327,15 +416,18 @@ public class WorldGamePanel extends JPanel implements Runnable{
 					swordPointY = c.getY()+c.getHeight();
 					for(int index2 = 0; index2 < characters.size(); index2++){
 						if(!c.equals(characters.get(index2))){
-							int bodyX1 = characters.get(index2).getX();
-							int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
-							int bodyY1 = characters.get(index2).getY();
-							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
-							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
-								if(characters.get(index2).fatalDamage(c.getPower())){
-									characters.remove(characters.get(index2));
+							if(characters.get(index2).getType().equals(CharacterTypes.GOLDEN_KNIGHT)&&!c.getType().equals(CharacterTypes.GOLDEN_KNIGHT)){
+								int bodyX1 = characters.get(index2).getX();
+								int bodyX2 = characters.get(index2).getX() + characters.get(index2).getWidth();
+								int bodyY1 = characters.get(index2).getY();
+								int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+								if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+									if(characters.get(index2).fatalDamage(c.getPower())){
+										characters.remove(characters.get(index2));
+									}
 								}
 							}
+
 						}
 					}
 					break;	
@@ -344,15 +436,18 @@ public class WorldGamePanel extends JPanel implements Runnable{
 					swordPointY = c.getY()+c.getHeight()/2;
 					for(int index2 = 0; index2 < characters.size(); index2++){
 						if(!c.equals(characters.get(index2))){
-							int bodyX1 = characters.get(index2).getX();
-							int bodyX2 = characters.get(index2).getX() + c.getWidth();
-							int bodyY1 = characters.get(index2).getY();
-							int bodyY2 = characters.get(index2).getY() + c.getHeight();
-							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
-								if(characters.get(index2).fatalDamage(c.getPower())){
-									characters.remove(characters.get(index2));
+							if(characters.get(index2).getType().equals(CharacterTypes.GOLDEN_KNIGHT)&&!c.getType().equals(CharacterTypes.GOLDEN_KNIGHT)){
+								int bodyX1 = characters.get(index2).getX();
+								int bodyX2 = characters.get(index2).getX() + c.getWidth();
+								int bodyY1 = characters.get(index2).getY();
+								int bodyY2 = characters.get(index2).getY() + c.getHeight();
+								if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+									if(characters.get(index2).fatalDamage(c.getPower())){
+										characters.remove(characters.get(index2));
+									}
 								}
 							}
+
 						}
 					}
 					break;
@@ -361,15 +456,18 @@ public class WorldGamePanel extends JPanel implements Runnable{
 					swordPointY = c.getY()+c.getHeight()/2;
 					for(int index2 = 0; index2 < characters.size(); index2++){
 						if(!c.equals(characters.get(index2))){
-							int bodyX1 = characters.get(index2).getX();
-							int bodyX2 = characters.get(index2).getX() + c.getWidth();
-							int bodyY1 = characters.get(index2).getY();
-							int bodyY2 = characters.get(index2).getY() + c.getHeight();
-							if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
-								if(characters.get(index2).fatalDamage(c.getPower())){
-									characters.remove(characters.get(index2));
+							if(characters.get(index2).getType().equals(CharacterTypes.GOLDEN_KNIGHT)&&!c.getType().equals(CharacterTypes.GOLDEN_KNIGHT)){
+								int bodyX1 = characters.get(index2).getX();
+								int bodyX2 = characters.get(index2).getX() + c.getWidth();
+								int bodyY1 = characters.get(index2).getY();
+								int bodyY2 = characters.get(index2).getY() + c.getHeight();
+								if(bodyX1<=swordPointX&&bodyX2>=swordPointX&&bodyY1<=swordPointY&&bodyY2>=swordPointY){
+									if(characters.get(index2).fatalDamage(c.getPower())){
+										characters.remove(characters.get(index2));
+									}
 								}
 							}
+
 						}
 					}
 					break;
@@ -379,7 +477,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 	}
 	public void updateCharacterLocations(){
 		for(int index = 0; index < characters.size(); index++){
-			
+
 			Character c = characters.get(index);
 			if(c.isAttacking())
 				continue;				//no moving while attacking
@@ -407,8 +505,8 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			}
 			if(c.getX()>Toolkit.getDefaultToolkit().getScreenSize().width*.7){
 				if(!c.equals(player)){
-				characters.remove(c);
-				base.fatalDamage(c.getPower());
+					characters.remove(c);
+					base.fatalDamage(c.getPower());
 				}
 			}
 			c.changeX(c.getXVelocity());
@@ -454,7 +552,7 @@ public class WorldGamePanel extends JPanel implements Runnable{
 				continue;
 			}
 			characters.get(index).drawMove(g, characters.get(index).getX(), characters.get(index).getY());
-			
+
 		}
 	}
 
