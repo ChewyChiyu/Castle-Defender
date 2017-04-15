@@ -1,4 +1,6 @@
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -13,18 +15,23 @@ import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
 @SuppressWarnings("serial")
 public class WorldGamePanel extends JPanel implements Runnable{
+	JFrame frame;
 	Thread t;
+	Timer time;
 	Timer worldTick;
 	ArrayList<Character> characters = new ArrayList<Character>();
 	int lives = 5;
 	GoldenKnight player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
 	BufferedImage castle;
+	BufferedImage playerHead;
 	Castle base = new Castle(100);
+	int gameTime = 0;
 	boolean isRunning;
 	public static void main(String[] args){
 		new WorldGamePanel();
@@ -41,13 +48,18 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		URL imageUrl2 = getClass().getResource("imgs/GoldenHead.png");
+		try {
+			playerHead = ImageIO.read(imageUrl2);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 	public void setUpPanel(){
 		characters.add(player);
-		JFrame frame = new JFrame("Slashin Nash");
+		frame = new JFrame("Slashin Nash");
 		frame.add(this);
-		this.setLayout(null);
 		frame.setPreferredSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize()));
 		frame.pack();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -197,18 +209,30 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			checkForPlayerDeath();
 		});
 		worldTick.start();	
+		time = new Timer(1000, e->{
+			gameTime++;
+		});
+		time.start();
 		}
 	public void spawnInMonster(){
-		characters.add(new Ogre(0,(int)(Math.random()*300)+300,Direction.RIGHT));
+		if((int)(Math.random()*2)==0){
+		characters.add(new Ogre(0,(int)(Math.random()*300)+(Toolkit.getDefaultToolkit().getScreenSize().height/3)));
+		}else{
+			characters.add(new Skelly(0,(int)(Math.random()*300)+(Toolkit.getDefaultToolkit().getScreenSize().height/3)));
+		}
 	}
 	public synchronized void start(){
 		t = new Thread(this);
 		isRunning = true;
+		time.start();
+		worldTick.start();
 		t.start();
 	}
 	public synchronized void stop(){
 		try{
 			isRunning = false;
+			time.stop();
+			worldTick.stop();
 			t.join();
 		}catch(Exception e){
 
@@ -236,12 +260,50 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			characters.add(player);
 			lives--;
 		}
+		if(lives<=0||base.fatalDamage(0)){
+		time.stop();
+		worldTick.stop();
+		int reply = JOptionPane.showConfirmDialog(null, "You Defended for " + gameTime + "seconds" + "\n Play Again?" , "Lose", JOptionPane.YES_NO_OPTION);
+		if (reply == JOptionPane.YES_OPTION) {
+			lives = 5;
+			characters.clear();
+			player = new GoldenKnight((int) (Toolkit.getDefaultToolkit().getScreenSize().width*.8),(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.5));
+			characters.add(player);
+			base.heal();
+			gameTime = 0;
+			time.start();
+			worldTick.start();
+		}
+		else {
+			System.exit(0);
+		}
+		}
 	}
 	public void checkForWounds(){
 		for(int index = 0; index < characters.size(); index++){
 			Character c = characters.get(index);
 			int swordPointX, swordPointY;
 			if(c.isAttacking()){
+				
+				if(c.getType().equals(CharacterTypes.SKELLY)){
+					swordPointY = c.getY() + c.getHeight()/2;
+					swordPointX = c.getX();
+					for(int index2 = 0; index2 < characters.size(); index2++){
+						if(!c.equals(characters.get(index2))){
+							int bodyX = characters.get(index2).getX();
+							int bodyY1 = characters.get(index2).getY();
+							int bodyY2 = characters.get(index2).getY() + characters.get(index2).getHeight();
+							if(bodyY1<=swordPointY&&bodyY2>=swordPointY&&bodyX>swordPointX){
+								if(characters.get(index2).fatalDamage(c.getPower())){
+									characters.remove(characters.get(index2));
+								}
+							}
+						}
+					}
+				}
+				
+				
+				
 				switch(c.getDirection()){
 				case UP: 
 					swordPointX = c.getX()+(c.getWidth()/2);
@@ -336,8 +398,15 @@ public class WorldGamePanel extends JPanel implements Runnable{
 			if(c.getX()>(int) (Toolkit.getDefaultToolkit().getScreenSize().width*.7)&&c.getY()>(int) (Toolkit.getDefaultToolkit().getScreenSize().height*.6)){
 				c.changeY(-c.getSpeed());
 			}
-			if(c.getX()>1000){
-				if(index!=0){
+			if(c.getType().equals(CharacterTypes.SKELLY)){
+				if(c.getX()>(int) (Toolkit.getDefaultToolkit().getScreenSize().width*.5)){
+					c.changeXVelocity(0);
+					c.attack();
+					base.fatalDamage(c.getPower());
+				}
+			}
+			if(c.getX()>Toolkit.getDefaultToolkit().getScreenSize().width*.7){
+				if(!c.equals(player)){
 				characters.remove(c);
 				base.fatalDamage(c.getPower());
 				}
@@ -353,12 +422,23 @@ public class WorldGamePanel extends JPanel implements Runnable{
 		drawCharacters(g);
 		drawBase(g);
 		drawLives(g);
+		drawTimer(g);
+	}
+	public void drawTimer(Graphics g){
+		int t = gameTime;
+		int min = t/60;
+		int sec = t-(min*60);
+		StringBuilder time = new StringBuilder();
+		time.append(min + " : " + sec);
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("Arial",Font.BOLD,30));
+		g.drawString(time.toString(), (int) (Toolkit.getDefaultToolkit().getScreenSize().getWidth()*.5), (int) (Toolkit.getDefaultToolkit().getScreenSize().getWidth()*.1));
 	}
 	public void drawLives(Graphics g){
 		int xBuffer = Toolkit.getDefaultToolkit().getScreenSize().width/2-100; //100 pixel buffer
 		for(int index = 0; index < lives; index++){
-			g.fillRect(xBuffer, 30, 70, 70);
-			xBuffer+=80;
+			g.drawImage(playerHead, xBuffer, 30, 150,70,null);
+			xBuffer+=70;
 		}
 	}
 	public void drawBackDrop(Graphics g){

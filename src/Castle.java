@@ -3,8 +3,10 @@ import java.awt.Graphics;
 
 public class Castle {
 	private int health;
+	private int initialHealth;
 	public Castle(int health){
 		this.health = health;
+		initialHealth = health;
 	}
 	public int getHealth(){
 		return health;
@@ -15,7 +17,9 @@ public class Castle {
 		}
 		return false;
 	}
-
+	public void heal(){
+		health = initialHealth;
+	}
 	public void draw(Graphics g){
 		g.setColor(Color.GREEN);
 		g.fillRect(900, 150, health*4, 10);

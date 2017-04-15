@@ -8,7 +8,7 @@ import javax.imageio.ImageIO;
 import javax.swing.Timer;
 
 
-public abstract class Character {
+public class Character {
 	private Timer movement;
 	private Timer grace;
 	private Timer moveAI;
@@ -29,18 +29,20 @@ public abstract class Character {
 	private int health;
 	private int initialHealth;
 	private int power;
+	private CharacterTypes type;
 	public BufferedImage spriteSheet;
 	public String bufferedImagePath;
 	public BufferedImage[] walkRight = new BufferedImage[9];
 	public BufferedImage[] walkDown = new BufferedImage[9];
 	public BufferedImage[] walkUp = new BufferedImage[9];
 	public BufferedImage[] walkLeft = new BufferedImage[9];
-	public BufferedImage[] attackUp = new BufferedImage[6];
-	public BufferedImage[] attackDown = new BufferedImage[6];
-	public BufferedImage[] attackLeft = new BufferedImage[6];
-	public BufferedImage[] attackRight = new BufferedImage[6];
+	public BufferedImage[] attackUp;
+	public BufferedImage[] attackDown;
+	public BufferedImage[] attackLeft;
+	public BufferedImage[] attackRight;
 
-	public Character(String imagePath,int x , int y, int width, int height,int speed,int health,int power){
+	public Character(String imagePath,int x , int y, int width, int height,int speed,int health,int power, CharacterTypes type){
+		this.type = type;
 		this.x = x;
 		this.y = y;
 		this.health = health;
@@ -61,9 +63,12 @@ public abstract class Character {
 			
 		grace.start();
 		
-		moveAI = new Timer(4000, e->{
+		moveAI = new Timer(2000, e->{
 			if(retreating){
 				retreating = false;
+			}
+			if(aiEnabled){
+				thinkProcess();
 			}
 		});
 		
@@ -76,15 +81,19 @@ public abstract class Character {
 				incrementAttackPhase();
 			}
 			if(aiEnabled){
-				thinkProcess();
+				thinkAttackProcess();
 			}
 		});
 		movement.start();
-		
+	}
+	public CharacterTypes getType(){
+		return type;
 	}
 	public void thinkProcess(){
 		if(!tookDamage){
 			attack();
+			if(type.equals(CharacterTypes.SKELLY))
+				return;
 			switch(d){
 			case RIGHT:
 			changeDirection(Direction.LEFT);
@@ -103,13 +112,17 @@ public abstract class Character {
 				changeYVelocity(speed);
 				break;
 			}
-			
+			retreating = true;
 		}
 		if(!retreating){
 		changeDirection(Direction.RIGHT);
 		changeXVelocity(speed);
 		}
 		
+	}
+	public void thinkAttackProcess(){
+		if(!tookDamage)
+		attack();
 	}
 	public int getPower(){
 		return power;
@@ -126,7 +139,6 @@ public abstract class Character {
 			return true;
 		}
 		tookDamage = false;
-		retreating = true;
 		return false;
 		}
 		return false;
@@ -160,6 +172,13 @@ public abstract class Character {
 			walkUp[index] = spriteSheet.getSubimage(xBuffer, 520, 64, 60);
 			xBuffer+=64;
 		}
+		if(type.equals(CharacterTypes.OGRE)||type.equals(CharacterTypes.GOLDEN_KNIGHT)){
+		
+		attackUp = new BufferedImage[6];
+		attackDown = new BufferedImage[6];	
+		attackLeft = new BufferedImage[6];	
+		attackRight = new BufferedImage[6];	
+			
 		xBuffer = 64;
 		for(int index = 0; index < 6; index++){
 			attackUp[index] = spriteSheet.getSubimage(xBuffer-10, 1390, 110, 90);
@@ -180,7 +199,38 @@ public abstract class Character {
 			attackRight[index] = spriteSheet.getSubimage(xBuffer, 1986, 130, 60);
 			xBuffer+=192;
 		}
+		}
+		if(type.equals(CharacterTypes.SKELLY)){
+			
+			attackUp = new BufferedImage[13];
+			attackDown = new BufferedImage[13];	
+			attackLeft = new BufferedImage[13];	
+			attackRight = new BufferedImage[13];
+			
+			xBuffer = 0;
+			for(int index = 0; index < 6; index++){
+				attackUp[index] = spriteSheet.getSubimage(xBuffer, 1024, 64, 60);
+				xBuffer+=64;
+			}
+			xBuffer = 0;
+			for(int index = 0; index < 6; index++){
+				attackLeft[index] = spriteSheet.getSubimage(xBuffer, 1088, 64, 60);
+				xBuffer+=64;
+			}
+			xBuffer = 0;
+			for(int index = 0; index < 6; index++){
+				attackDown[index] = spriteSheet.getSubimage(xBuffer, 1152, 64, 60);
+				xBuffer+=64;
+			}
+			xBuffer = 0;
+			for(int index = 0; index < 6; index++){
+				attackRight[index] = spriteSheet.getSubimage(xBuffer, 1216, 64, 60);
+				xBuffer+=64;
+			}
+			
+		}
 	}
+	
 	public boolean isAttacking(){
 		return attacking;
 	}
@@ -203,6 +253,7 @@ public abstract class Character {
 		g.fillRect(x, y, health, 8);
 	}
 	public void drawAttack(Graphics g, int x , int y){
+		if(type.equals(CharacterTypes.OGRE)||type.equals(CharacterTypes.GOLDEN_KNIGHT)){
 		switch(d){  
 		case RIGHT : g.drawImage(attackRight[attackPhase], x+10, y-10,170,110, null);
 		break;
@@ -213,6 +264,19 @@ public abstract class Character {
 		case DOWN : g.drawImage(attackDown[attackPhase], x-20, y-10,160,160, null);
 		break;
 		}
+		}
+		if(type.equals(CharacterTypes.SKELLY)){
+			switch(d){  
+			case RIGHT : g.drawImage(attackRight[attackPhase], x, y,100,100, null);
+			break;
+			case LEFT : g.drawImage(attackLeft[attackPhase], x, y,100,100, null);
+			break;
+			case UP : g.drawImage(attackUp[attackPhase], x, y,100,100, null);
+			break;
+			case DOWN : g.drawImage(attackDown[attackPhase], x, y,100,100, null);
+			break;
+			}
+			}
 		g.setColor(Color.green);
 		g.fillRect(x, y+5, health, 8); // 5 pixel buffer
 	}
